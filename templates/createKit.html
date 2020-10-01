@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OOTZ</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous"/>
+</head>
+
+<body>
+
+
+  <section class="hero is-dark">
+    <div class="hero-body">
+      <div class="container">
+        <h1 class="title">
+          Montagem do Kit
+        </h1>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="section">
+
+    <div class="container">
+      <div class="tile is-child">
+
+
+
+            {% if (products is defined) and products|length %}
+
+                <p class="title">Clique em cima do produto para montar o Kit</p>
+
+                <form action="/kitRegister" method="POST" >
+
+                {% for product in products %}
+                    {% if loop.index  % 4 == 0 or loop.index == 1 %}
+                        {% if loop.index != 1 %}
+                            </div>
+                          </div>
+                        {% endif %}
+                        <div class="tile is-ancestor">
+                          <div class="tile is-parent">
+                    {% endif %}
+
+                    <div class="tile is-parent">
+                      <article class="distinct tile is-child box">
+                        <input type="checkbox" name={{ product['sku'] }} unchecked />
+                        <input type="number"  value="9" max="{{ product['estoque'] }}"  class="button is-primary is-pulled-right" placeholder="ocorrência por kit"/>
+
+                        <p class="title is-4">{{ product['nome'] }}</p>
+                        <p>Sku: {{ product['sku'] }}</p>
+                        <p>Preço: R$ {{ product['preco'] }}</p>
+                        <p>Custo: R$ {{ product['custo'] }}</p>
+                        <p>Estoque: {{ product['estoque'] }}</p>
+
+                      </article>
+                    </div>
+                {% endfor %}
+              </div>
+            </div>
+            <div class="is-pulled-right is-1">
+                  <input type="text" id="nome" class="button" placeholder="Nome do kit"/>
+                  <input type="text" id="sku" class="button" placeholder="SKU do kit"/>
+                  <input type="number" id="desconto" class="button" placeholder="Desconto"/>
+                <button class="button is-link " type="submit" id="submit" value="submit">Enviar</button>
+              </div>
+              </form>
+
+            {% else %}
+              <p class="title">Não há produtos cadastrados!</p>
+            {% endif %}
+
+      </div>
+    </div>
+  </section>
+
+
+
+
+    <section class="section">
+
+      <div class="container">
+        <div class="tile is-child">
+
+              {% if (products is defined) and products|length %}
+
+                  <p class="title">Kits</p>
+
+                  {% for product in kits %}
+                      {% if loop.index  % 4 == 0 or loop.index == 1 %}
+                          {% if loop.index != 1 %}
+                              </div>
+                            </div>
+                          {% endif %}
+                          <div class="tile is-ancestor">
+                            <div class="tile is-parent">
+                      {% endif %}
+
+                      <div class="tile is-parent">
+                        <article class="tile is-child box">
+                          <p class="title is-4">{{ product['nome'] }}</p>
+                          <p>Sku: {{ product['sku'] }}</p>
+                          <p>Preço: R$ {{ product['preco'] }}</p>
+                          <p>Custo: R$ {{ product['custo'] }}</p>
+                          <p>Estoque: {{ product['estoque'] }}</p>
+
+                            <form action="/delRegister" method="POST" >
+
+                          <button  name="{{ product['sku'] }}"  type="submit" class="del icon is-large is-pulled-right">
+                            <span class="fa-stack fa-lg">
+                              <i class="fas fa-trash-alt"></i>
+                            </span>
+                          </button>
+
+                        </article>
+                      </div>
+                  {% endfor %}
+                </div>
+              </div>
+
+              {% else %}
+                <p class="title">Não há produtos cadastrados!</p>
+              {% endif %}
+
+        </div>
+      </div>
+    </section>
+
+
+
+  <script>
+
+
+  $( document ).ready(function() {
+
+      $("form").submit(function(e){
+        e.preventDefault();
+      });
+
+      $("#submit").click(function(){
+
+        $kit_data = [$("#nome").val(), $("#sku").val(), $("#desconto").val()];
+
+        $.ajax({
+          type: "POST",
+          url: "/kitRegister",
+          data: JSON.stringify([allChecked(), $kit_data]),
+          contentType: "application/json",
+          success: window.location.reload()
+         });
+      });
+
+      $(".del").click(function(){
+        $.ajax({
+          type: "POST",
+          url: "/deletekit",
+          data: JSON.stringify($(this).attr("name")),
+          contentType: "application/json",
+          success: window.location.reload()
+         });
+      });
+
+
+      function allChecked(){
+          $n = [];
+          $('input:checkbox').each(function () {
+              if (this.checked){
+                $data = [
+                  parseInt($(this).siblings("input[type=number]").val()),
+                  $(this).attr("name")
+                ]
+                $n.push($data);
+              }
+          });
+
+        return $n;
+      }
+
+      $('.distinct').click(function() {
+
+        var $checkbox = $(this).children("input");
+        if ($checkbox.is(":checked")){
+            $(this).removeClass("notification is-info");
+            togglecheckbox($checkbox, false);
+
+        }
+        else {
+           $(this).addClass("notification is-info");
+           togglecheckbox($checkbox, true);
+        }
+      });
+
+      function togglecheckbox($checkbox, $bool) {
+    		$checkbox.prop('checked', $bool);
+    		$checkbox.data('waschecked', $bool);
+    	}
+
+      $( "input" ).click(function( event ) {
+          event.stopImmediatePropagation();
+      });
+  });
+
+  </script>
+</body>
+
+</html>
